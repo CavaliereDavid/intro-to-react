@@ -1,122 +1,139 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import Cart from "./Cart";
 import Pizza from "./Pizza";
+
+// feel free to change en-US / USD to your locale
 const intl = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
 });
 
 export default function Order() {
-  // rules around hooks are: they can't never be inside conditionals if(condition){useState} NEVER,
-  // you don't want change handlers on divs, you want them on inputs, buttons, etc.
-  // controoled forms are to be used in search, user input, because form submit would not be enough
-  // in all other cases, use uncontrolled forms because
-
   const [pizzaType, setPizzaType] = useState("pepperoni");
   const [pizzaSize, setPizzaSize] = useState("M");
   const [pizzaTypes, setPizzaTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState([]);
 
-  // derivative states https://www.reddit.com/r/reactjs/comments/11ztv4i/what_is_derived_state_in_react/
-  let price, selectedPizza;
-  if (!loading) {
-    selectedPizza = pizzaTypes.find((pizza) => pizzaType === pizza.id);
-    price = intl.format(selectedPizza.sizes[pizzaSize]);
-  }
+  async function checkout() {
+    setLoading(true);
 
-  async function fetchPizzaTypes() {
-    const pizzaRes = await fetch("/api/pizzas");
-    const pizzaJson = await pizzaRes.json();
-    setPizzaTypes(pizzaJson);
+    await fetch("/api/order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cart,
+      }),
+    });
+
+    setCart([]);
     setLoading(false);
   }
 
-  // fetchPizzaTypes() i don't want to run this call everytime, for this reason we use useEffect
+  let price, selectedPizza;
+  if (!loading) {
+    selectedPizza = pizzaTypes.find((pizza) => pizzaType === pizza.id);
+    price = intl.format(
+      selectedPizza.sizes ? selectedPizza.sizes[pizzaSize] : "",
+    );
+  }
 
   useEffect(() => {
     fetchPizzaTypes();
-  }, []); // this effect gets run a single time if i pass [] an empty array
+  }, []);
 
-  //   useEffect(async () => {
-  //     fetchPizzaTypes();
-  //   }, []);  don't use async because it returns a promise,
+  async function fetchPizzaTypes() {
+    const pizzasRes = await fetch("/api/pizzas");
+    const pizzasJson = await pizzasRes.json();
+    setPizzaTypes(pizzasJson);
+    setLoading(false);
+  }
 
   return (
-    <div className="order">
-      <h2>Create Order</h2>
-      <form>
-        <div>
+    <div className="order-page">
+      <div className="order">
+        <h2>Create Order</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setCart([
+              ...cart,
+              { pizza: selectedPizza, size: pizzaSize, price },
+            ]);
+          }}
+        >
           <div>
-            <label htmlFor="pizza-type">Pizza Type</label>
-            <select
-              onChange={(e) => setPizzaType(e.target.value)}
-              name="pizza-type"
-              value={pizzaType}
-            >
-              {/* <option value="pepperoni">The Pepperoni Pizza</option>
-              <option value="hawaiian">The Hawaiian Pizza</option>
-              <option value="big_meat">The Big Meat Pizza</option> */}
-              {/* index refers to a position in the array, not the object itself*/}
-              {pizzaTypes.map((pizza) => (
-                <option key={pizza.id} value={pizza.id}>
-                  {pizza.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="pizza-size">Pizza Type</label>
             <div>
-              <span>
-                <input
-                  onChange={(e) => setPizzaSize(e.target.value)}
-                  checked={pizzaSize === "S"}
-                  type="radio"
-                  name="pizza-size"
-                  value="S"
-                  id="pizza-s"
-                />
-                <label htmlFor="pizza-s">Small</label>
-              </span>
-              <span>
-                <input
-                  onChange={(e) => setPizzaSize(e.target.value)}
-                  checked={pizzaSize === "M"}
-                  type="radio"
-                  name="pizza-size"
-                  value="M"
-                  id="pizza-m"
-                />
-                <label htmlFor="pizza-m">Medium</label>
-              </span>
-              <span>
-                <input
-                  onChange={(e) => setPizzaSize(e.target.value)}
-                  checked={pizzaSize === "L"}
-                  type="radio"
-                  name="pizza-size"
-                  value="L"
-                  id="pizza-l"
-                />
-                <label htmlFor="pizza-l">Large</label>
-              </span>
+              <label htmlFor="pizza-type">Pizza Type</label>
+              <select
+                onChange={(e) => setPizzaType(e.target.value)}
+                name="pizza-type"
+                value={pizzaType}
+              >
+                {pizzaTypes.map((pizza) => (
+                  <option key={pizza.id} value={pizza.id}>
+                    {pizza.name}
+                  </option>
+                ))}
+              </select>
             </div>
+            <div>
+              <label htmlFor="pizza-size">Pizza Type</label>
+              <div>
+                <span>
+                  <input
+                    onChange={(e) => setPizzaSize(e.target.value)}
+                    checked={pizzaSize === "S"}
+                    type="radio"
+                    name="pizza-size"
+                    value="S"
+                    id="pizza-s"
+                  />
+                  <label htmlFor="pizza-s">Small</label>
+                </span>
+                <span>
+                  <input
+                    onChange={(e) => setPizzaSize(e.target.value)}
+                    checked={pizzaSize === "M"}
+                    type="radio"
+                    name="pizza-size"
+                    value="M"
+                    id="pizza-m"
+                  />
+                  <label htmlFor="pizza-m">Medium</label>
+                </span>
+                <span>
+                  <input
+                    onChange={(e) => setPizzaSize(e.target.value)}
+                    checked={pizzaSize === "L"}
+                    type="radio"
+                    name="pizza-size"
+                    value="L"
+                    id="pizza-l"
+                  />
+                  <label htmlFor="pizza-l">Large</label>
+                </span>
+              </div>
+            </div>
+            <button type="submit">Add to Cart</button>
           </div>
-          <button type="submit">Add to Cart</button>
-        </div>
-        {/* ternary  are expressions and not statements */}
-        {loading ? (
-          <h3>LOADING …</h3>
-        ) : (
-          <div className="order-pizza">
-            <Pizza
-              name={selectedPizza.name}
-              description={selectedPizza.description}
-              image={selectedPizza.image}
-            />
-            <p>{price}</p>
-          </div>
-        )}
-      </form>
+          {loading ? (
+            <h3>LOADING …</h3>
+          ) : (
+            <div className="order-pizza">
+              <Pizza
+                name={selectedPizza.name}
+                description={selectedPizza.description}
+                image={selectedPizza.image}
+              />
+              <p>{price}</p>
+            </div>
+          )}
+        </form>
+      </div>
+      {loading ? <h2>LOADING …</h2> : <Cart checkout={checkout} cart={cart} />}
     </div>
   );
 }
