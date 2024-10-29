@@ -40,9 +40,6 @@ export default function Order() {
   //     fetchPizzaTypes();
   //   }, []);  don't use async because it returns a promise,
 
-  console.log(pizzaType, pizzaSize);
-  console.log(pizzaSize, setPizzaSize);
-
   return (
     <div className="order">
       <h2>Create Order</h2>
