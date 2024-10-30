@@ -1,7 +1,5 @@
 import { usePizzaOfTheDay } from "./usePizzaOfTheDay";
-// $r to interact on console with the last hooks, instead if you want to interact with the last element use $0
-// this is a custom hook so I gave It that name, and I imported It before defining it
-// feel free to change en-US / USD to your locale
+
 const intl = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
